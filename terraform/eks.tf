@@ -1,6 +1,6 @@
 resource "aws_eks_cluster" "voting" {
   name     = "voting-app-cluster"
-  role_arn = "REPLACE_LATER"
+  role_arn = "arn:aws:iam::117030212282:role/eks-cluster-role-jenkins"
   version  = "1.33"
 
   vpc_config {

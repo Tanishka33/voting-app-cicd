@@ -64,6 +64,27 @@ pipeline {
             }
         }
 
+        stage('Trivy Scan') {
+            steps {
+                sh '''
+                    trivy image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 0 \
+                    $DOCKER_USER/vote:latest
+
+                    trivy image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 0 \
+                    $DOCKER_USER/result:latest
+
+                    trivy image \
+                    --severity HIGH,CRITICAL \
+                    --exit-code 0 \
+                    $DOCKER_USER/worker:latest
+                '''
+            }
+        }
+
         stage('Push Images') {
             steps {
                 withCredentials([

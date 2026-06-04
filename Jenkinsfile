@@ -86,24 +86,42 @@ pipeline {
         }
 
         stage('Integration Test') {
-                    steps {
-                        sh '''
-                            docker compose up -d
-                            
-                            sleep 30
-                            
-                            # Test the Voting Front-end (Port 8090)
-                            echo "Testing Vote application..."
-                            curl -f http://localhost:8090
-                            
-                            # Test the Result Front-end (Port 8081)
-                            echo "Testing Result application..."
-                            curl -f http://localhost:8081
-                            
-                            docker compose down
-                        '''
-                    }
-                }
+            steps {
+                sh '''
+                    docker compose up -d
+                    
+                    sleep 30
+                    
+                    # Test the Voting Front-end (Port 8090)
+                    echo "Testing Vote application..."
+                    curl -f http://localhost:8090
+                    
+                    # Test the Result Front-end (Port 8081)
+                    echo "Testing Result application..."
+                    curl -f http://localhost:8081
+                    
+                    docker compose down
+                '''
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                sh '''
+                    cd terraform
+                    terraform init
+                '''
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                sh '''
+                    cd terraform
+                    terraform plan
+                '''
+            }
+        }
 
         stage('Push Images') {
             steps {
@@ -124,6 +142,20 @@ pipeline {
                         docker push $DOCKER_USER/worker:latest
                     '''
                 }
+            }
+        }
+
+        stage('Deploy To Kubernetes') {
+            steps {
+                sh '''
+                    aws eks update-kubeconfig \
+                    --region ap-south-1 \
+                    --name voting-app-cluster
+
+                    kubectl apply -f k8s-specifications/
+
+                    kubectl get pods
+                '''
             }
         }
 

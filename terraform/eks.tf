@@ -5,8 +5,9 @@ resource "aws_eks_cluster" "voting" {
 
   vpc_config {
     subnet_ids = [
-      "subnet-REPLACE1",
-      "subnet-REPLACE2"
+      "subnet-08a7bc3710add889a",
+      "subnet-0797cae471c1ed04a",
+      "subnet-0d2cfa4f4dfb940e4"
     ]
   }
 }

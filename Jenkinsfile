@@ -69,7 +69,7 @@ pipeline {
                 sh '''
                     trivy image \
                     --severity HIGH,CRITICAL \
-                    --exit-code 0 \
+                    --exit-code 1 \
                     $DOCKER_USER/vote:latest
 
                     trivy image \

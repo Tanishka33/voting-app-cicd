@@ -1,5 +1,7 @@
 pipeline {
-    agent any
+    agent {
+        label 'ec2-agent'
+    }
 
     environment {
         DOCKER_USER = 'tanishkaborade'

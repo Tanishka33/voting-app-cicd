@@ -85,6 +85,26 @@ pipeline {
             }
         }
 
+        stage('Integration Test') {
+                    steps {
+                        sh '''
+                            docker compose up -d
+                            
+                            sleep 30
+                            
+                            # Test the Voting Front-end (Port 8090)
+                            echo "Testing Vote application..."
+                            curl -f http://localhost:8090
+                            
+                            # Test the Result Front-end (Port 8081)
+                            echo "Testing Result application..."
+                            curl -f http://localhost:8081
+                            
+                            docker compose down
+                        '''
+                    }
+                }
+
         stage('Push Images') {
             steps {
                 withCredentials([

@@ -4,7 +4,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_USER = 'tanishkaborade'
+        DOCKER_USER = 'tanishka3315'
     }
 
     stages {
@@ -70,6 +70,15 @@ pipeline {
                         docker push $DOCKER_USER/worker:latest
                     '''
                 }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh '''
+                    docker system prune -af
+                    docker image prune -af
+                '''
             }
         }
     }

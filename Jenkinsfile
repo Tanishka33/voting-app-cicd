@@ -6,6 +6,7 @@ pipeline {
     environment {
         DOCKER_USER = 'tanishka3315'
         IMAGE_TAG = "${BUILD_NUMBER}"
+        TRIVY_PASS = 'true'
     }
 
     stages {
@@ -71,22 +72,33 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                sh '''
-                    trivy image \
-                    --severity HIGH,CRITICAL \
-                    --exit-code 0 \
-                    $DOCKER_USER/vote:${IMAGE_TAG}
+                script {
+                    // Scan Vote Image
+                    def voteResult = sh(
+                        script: "trivy image --severity CRITICAL --exit-code 1 \$DOCKER_USER/vote:\$IMAGE_TAG",
+                        returnStatus: true
+                    )
 
-                    trivy image \
-                    --severity HIGH,CRITICAL \
-                    --exit-code 0 \
-                    $DOCKER_USER/result:${IMAGE_TAG}
+                    // Scan Result Image
+                    def resultResult = sh(
+                        script: "trivy image --severity CRITICAL --exit-code 1 \$DOCKER_USER/result:\$IMAGE_TAG",
+                        returnStatus: true
+                    )
 
-                    trivy image \
-                    --severity HIGH,CRITICAL \
-                    --exit-code 0 \
-                    $DOCKER_USER/worker:${IMAGE_TAG}
-                '''
+                    // Scan Worker Image
+                    def workerResult = sh(
+                        script: "trivy image --severity CRITICAL --exit-code 1 \$DOCKER_USER/worker:\$IMAGE_TAG",
+                        returnStatus: true
+                    )
+
+                    // If any image scan returns a non-zero exit status (vulnerabilities found)
+                    if (voteResult != 0 || resultResult != 0 || workerResult != 0) {
+                        echo "⚠️ Critical vulnerabilities found in one or more microservice images!"
+                        env.TRIVY_PASS = 'false'
+                    } else {
+                        echo "✅ All images passed Trivy security screening."
+                    }
+                }
             }
         }
 
@@ -147,6 +159,11 @@ pipeline {
         }
 
         stage('Push Images') {
+            when {
+                expression {
+                    env.TRIVY_PASS == 'true'
+                }
+            }
             steps {
                 withCredentials([
                     usernamePassword(
@@ -169,6 +186,11 @@ pipeline {
         }
 
         stage('Deploy To Kubernetes') {
+            when {
+                expression {
+                    env.TRIVY_PASS == 'true'
+                }
+            }
             steps {
                 sh '''
                     aws eks update-kubeconfig \

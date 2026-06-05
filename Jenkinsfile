@@ -70,37 +70,33 @@ pipeline {
         }
 
         stage('Trivy Scan') {
-            parallel {
-                stage('Scan Vote') {
-                    steps {
-                        sh '''
+            steps {
+                script {
+                    def status = sh(
+                        script: '''
                         trivy image \
                         --severity CRITICAL \
                         --exit-code 1 \
                         $DOCKER_USER/vote:$IMAGE_TAG
-                        '''
-                    }
-                }
 
-                stage('Scan Result') {
-                    steps {
-                        sh '''
                         trivy image \
                         --severity CRITICAL \
                         --exit-code 1 \
                         $DOCKER_USER/result:$IMAGE_TAG
-                        '''
-                    }
-                }
 
-                stage('Scan Worker') {
-                    steps {
-                        sh '''
                         trivy image \
                         --severity CRITICAL \
                         --exit-code 1 \
                         $DOCKER_USER/worker:$IMAGE_TAG
-                        '''
+                        ''',
+                        returnStatus: true
+                    )
+
+                    if (status != 0) {
+                        input(
+                            message: 'Critical vulnerabilities found. Continue anyway?',
+                            ok: 'Override'
+                        )
                     }
                 }
             }

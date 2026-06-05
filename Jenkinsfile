@@ -35,36 +35,34 @@ pipeline {
         }
 
         stage('Parallel Build') {
-            stages {
-                parallel {
-                    stage('Build Vote') {
-                        steps {
-                            sh '''
-                                docker build \
-                                -t $DOCKER_USER/vote:latest \
-                                ./vote
-                            '''
-                        }
+            parallel {
+                stage('Build Vote') {
+                    steps {
+                        sh '''
+                            docker build \
+                            -t $DOCKER_USER/vote:latest \
+                            ./vote
+                        '''
                     }
+                }
 
-                    stage('Build Result') {
-                        steps {
-                            sh '''
-                                docker build \
-                                -t $DOCKER_USER/result:latest \
-                                ./result
-                            '''
-                        }
+                stage('Build Result') {
+                    steps {
+                        sh '''
+                            docker build \
+                            -t $DOCKER_USER/result:latest \
+                            ./result
+                        '''
                     }
+                }
 
-                    stage('Build Worker') {
-                        steps {
-                            sh '''
-                                docker build \
-                                -t $DOCKER_USER/worker:latest \
-                                ./worker
-                            '''
-                        }
+                stage('Build Worker') {
+                    steps {
+                        sh '''
+                            docker build \
+                            -t $DOCKER_USER/worker:latest \
+                            ./worker
+                        '''
                     }
                 }
             }

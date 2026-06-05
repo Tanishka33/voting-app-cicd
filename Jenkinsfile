@@ -127,6 +127,15 @@ pipeline {
             }
         }
 
+        stage('Manual Approval') {
+            steps {
+                input(
+                    message: 'Approve deployment?',
+                    ok: 'Deploy'
+                )
+            }
+        }
+
         stage('Push Images') {
             steps {
                 withCredentials([

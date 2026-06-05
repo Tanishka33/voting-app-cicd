@@ -136,6 +136,18 @@ pipeline {
             }
         }
 
+        stage('Terraform Apply') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh '''
+                    cd terraform
+                    terraform apply -auto-approve
+                '''
+            }
+        }
+
         stage('Push Images') {
             steps {
                 withCredentials([

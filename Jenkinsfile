@@ -5,6 +5,7 @@ pipeline {
 
     environment {
         DOCKER_USER = 'tanishka3315'
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -40,7 +41,7 @@ pipeline {
                     steps {
                         sh '''
                             docker build \
-                            -t $DOCKER_USER/vote:latest \
+                            -t $DOCKER_USER/vote:${IMAGE_TAG} \
                             ./vote
                         '''
                     }
@@ -50,7 +51,7 @@ pipeline {
                     steps {
                         sh '''
                             docker build \
-                            -t $DOCKER_USER/result:latest \
+                            -t $DOCKER_USER/result:${IMAGE_TAG} \
                             ./result
                         '''
                     }
@@ -60,7 +61,7 @@ pipeline {
                     steps {
                         sh '''
                             docker build \
-                            -t $DOCKER_USER/worker:latest \
+                            -t $DOCKER_USER/worker:${IMAGE_TAG} \
                             ./worker
                         '''
                     }
@@ -74,17 +75,17 @@ pipeline {
                     trivy image \
                     --severity HIGH,CRITICAL \
                     --exit-code 0 \
-                    $DOCKER_USER/vote:latest
+                    $DOCKER_USER/vote:${IMAGE_TAG}
 
                     trivy image \
                     --severity HIGH,CRITICAL \
                     --exit-code 0 \
-                    $DOCKER_USER/result:latest
+                    $DOCKER_USER/result:${IMAGE_TAG}
 
                     trivy image \
                     --severity HIGH,CRITICAL \
                     --exit-code 0 \
-                    $DOCKER_USER/worker:latest
+                    $DOCKER_USER/worker:${IMAGE_TAG}
                 '''
             }
         }
@@ -137,9 +138,6 @@ pipeline {
         }
 
         stage('Terraform Apply') {
-            when {
-                branch 'main'
-            }
             steps {
                 sh '''
                     cd terraform
@@ -162,9 +160,9 @@ pipeline {
                         -u $USER \
                         --password-stdin
 
-                        docker push $DOCKER_USER/vote:latest
-                        docker push $DOCKER_USER/result:latest
-                        docker push $DOCKER_USER/worker:latest
+                        docker push $DOCKER_USER/vote:${IMAGE_TAG}
+                        docker push $DOCKER_USER/result:${IMAGE_TAG}
+                        docker push $DOCKER_USER/worker:${IMAGE_TAG}
                     '''
                 }
             }
@@ -178,6 +176,19 @@ pipeline {
                     --name voting-app-cluster
 
                     kubectl apply -f k8s-specifications/
+
+                    kubectl set image deployment/vote \
+                    vote=$DOCKER_USER/vote:$IMAGE_TAG
+
+                    kubectl set image deployment/result \
+                    result=$DOCKER_USER/result:$IMAGE_TAG
+
+                    kubectl set image deployment/worker \
+                    worker=$DOCKER_USER/worker:$IMAGE_TAG
+
+                    kubectl rollout status deployment/vote
+                    kubectl rollout status deployment/result
+                    kubectl rollout status deployment/worker
 
                     kubectl get pods
                 '''

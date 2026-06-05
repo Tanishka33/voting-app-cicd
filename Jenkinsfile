@@ -6,7 +6,6 @@ pipeline {
     environment {
         DOCKER_USER = 'tanishka3315'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        TRIVY_PASS = 'true'
     }
 
     stages {
@@ -41,9 +40,9 @@ pipeline {
                 stage('Build Vote') {
                     steps {
                         sh '''
-                            docker build \
-                            -t $DOCKER_USER/vote:${IMAGE_TAG} \
-                            ./vote
+                        docker build \
+                        -t $DOCKER_USER/vote:$IMAGE_TAG \
+                        ./vote
                         '''
                     }
                 }
@@ -51,9 +50,9 @@ pipeline {
                 stage('Build Result') {
                     steps {
                         sh '''
-                            docker build \
-                            -t $DOCKER_USER/result:${IMAGE_TAG} \
-                            ./result
+                        docker build \
+                        -t $DOCKER_USER/result:$IMAGE_TAG \
+                        ./result
                         '''
                     }
                 }
@@ -61,9 +60,9 @@ pipeline {
                 stage('Build Worker') {
                     steps {
                         sh '''
-                            docker build \
-                            -t $DOCKER_USER/worker:${IMAGE_TAG} \
-                            ./worker
+                        docker build \
+                        -t $DOCKER_USER/worker:$IMAGE_TAG \
+                        ./worker
                         '''
                     }
                 }
@@ -71,32 +70,37 @@ pipeline {
         }
 
         stage('Trivy Scan') {
-            steps {
-                script {
-                    // Scan Vote Image
-                    def voteResult = sh(
-                        script: "trivy image --severity CRITICAL --exit-code 1 \$DOCKER_USER/vote:\$IMAGE_TAG",
-                        returnStatus: true
-                    )
+            parallel {
+                stage('Scan Vote') {
+                    steps {
+                        sh '''
+                        trivy image \
+                        --severity CRITICAL \
+                        --exit-code 1 \
+                        $DOCKER_USER/vote:$IMAGE_TAG
+                        '''
+                    }
+                }
 
-                    // Scan Result Image
-                    def resultResult = sh(
-                        script: "trivy image --severity CRITICAL --exit-code 1 \$DOCKER_USER/result:\$IMAGE_TAG",
-                        returnStatus: true
-                    )
+                stage('Scan Result') {
+                    steps {
+                        sh '''
+                        trivy image \
+                        --severity CRITICAL \
+                        --exit-code 1 \
+                        $DOCKER_USER/result:$IMAGE_TAG
+                        '''
+                    }
+                }
 
-                    // Scan Worker Image
-                    def workerResult = sh(
-                        script: "trivy image --severity CRITICAL --exit-code 1 \$DOCKER_USER/worker:\$IMAGE_TAG",
-                        returnStatus: true
-                    )
-
-                    // If any image scan returns a non-zero exit status (vulnerabilities found)
-                    if (voteResult != 0 || resultResult != 0 || workerResult != 0) {
-                        echo "⚠️ Critical vulnerabilities found in one or more microservice images!"
-                        env.TRIVY_PASS = 'false'
-                    } else {
-                        echo "✅ All images passed Trivy security screening."
+                stage('Scan Worker') {
+                    steps {
+                        sh '''
+                        trivy image \
+                        --severity CRITICAL \
+                        --exit-code 1 \
+                        $DOCKER_USER/worker:$IMAGE_TAG
+                        '''
                     }
                 }
             }
@@ -106,17 +110,12 @@ pipeline {
             steps {
                 sh '''
                     docker compose up -d
-                    
+
                     sleep 30
-                    
-                    # Test the Voting Front-end (Port 8090)
-                    echo "Testing Vote application..."
+
                     curl -f http://localhost:8090
-                    
-                    # Test the Result Front-end (Port 8081)
-                    echo "Testing Result application..."
                     curl -f http://localhost:8081
-                    
+
                     docker compose down
                 '''
             }
@@ -159,11 +158,6 @@ pipeline {
         }
 
         stage('Push Images') {
-            when {
-                expression {
-                    env.TRIVY_PASS == 'true'
-                }
-            }
             steps {
                 withCredentials([
                     usernamePassword(
@@ -177,20 +171,15 @@ pipeline {
                         -u $USER \
                         --password-stdin
 
-                        docker push $DOCKER_USER/vote:${IMAGE_TAG}
-                        docker push $DOCKER_USER/result:${IMAGE_TAG}
-                        docker push $DOCKER_USER/worker:${IMAGE_TAG}
+                        docker push $DOCKER_USER/vote:$IMAGE_TAG
+                        docker push $DOCKER_USER/result:$IMAGE_TAG
+                        docker push $DOCKER_USER/worker:$IMAGE_TAG
                     '''
                 }
             }
         }
 
         stage('Deploy To Kubernetes') {
-            when {
-                expression {
-                    env.TRIVY_PASS == 'true'
-                }
-            }
             steps {
                 sh '''
                     aws eks update-kubeconfig \
@@ -199,14 +188,9 @@ pipeline {
 
                     kubectl apply -f k8s-specifications/
 
-                    kubectl set image deployment/vote \
-                    vote=$DOCKER_USER/vote:$IMAGE_TAG
-
-                    kubectl set image deployment/result \
-                    result=$DOCKER_USER/result:$IMAGE_TAG
-
-                    kubectl set image deployment/worker \
-                    worker=$DOCKER_USER/worker:$IMAGE_TAG
+                    kubectl set image deployment/vote vote=$DOCKER_USER/vote:$IMAGE_TAG
+                    kubectl set image deployment/result result=$DOCKER_USER/result:$IMAGE_TAG
+                    kubectl set image deployment/worker worker=$DOCKER_USER/worker:$IMAGE_TAG
 
                     kubectl rollout status deployment/vote
                     kubectl rollout status deployment/result
@@ -220,10 +204,21 @@ pipeline {
         stage('Cleanup') {
             steps {
                 sh '''
-                    docker system prune -af
-                    docker image prune -af
+                docker system prune -af
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully'
+        }
+        failure {
+            echo 'Pipeline failed → previous deployment remains active'
+        }
+        always {
+            cleanWs()
         }
     }
 }

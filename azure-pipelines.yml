@@ -75,56 +75,46 @@ stages:
   displayName: "Build + Security"
   dependsOn: CodeQuality
   jobs:
-
   - job: BuildAndScan
     displayName: "Build And Scan"
+    continueOnError: true
     steps:
     - checkout: self
-
     # BUILD
     - script: |
         docker build -t vote:test ./vote
         docker build -t result:test ./result
         docker build -t worker:test ./worker
       displayName: "Build Images"
-
     # VERIFY
     - script: |
         docker images
       displayName: "Verify Images"
-
-    # SECURITY (TRIVY FAIL DETECTION)
+    # TRIVY
     - script: |
         FAILED=0
-
         echo "===== VOTE ====="
         trivy image \
           --severity HIGH,CRITICAL \
           --exit-code 1 \
           vote:test || FAILED=1
-
         echo "===== RESULT ====="
         trivy image \
           --severity HIGH,CRITICAL \
           --exit-code 1 \
           result:test || FAILED=1
-
         echo "===== WORKER ====="
         trivy image \
           --severity HIGH,CRITICAL \
           --exit-code 1 \
           worker:test || FAILED=1
-
         if [ "$FAILED" -eq 1 ]
         then
-          echo "##vso[task.setvariable variable=security_failed;isOutput=false]true"
-          echo "Vulnerabilities detected"
-        else
-          echo "##vso[task.setvariable variable=security_failed;isOutput=false]false"
-          echo "Security Passed"
+          echo "Security findings detected"
+          exit 1
         fi
+        echo "Security Passed"
       displayName: "Security Scan"
-
     # CLEANUP
     - script: |
         docker image rm vote:test || true
@@ -133,22 +123,20 @@ stages:
         docker image prune -af
       condition: always()
       displayName: "Cleanup"
-
-  # CONDITIONAL APPROVAL GATE
+  # APPROVAL
   - job: SecurityApproval
-    displayName: "Security Approval Gate"
+    displayName: "Security Approval"
     dependsOn: BuildAndScan
-    condition: always()
+    condition: failed('BuildAndScan')
     pool: server
     steps:
     - task: ManualValidation@0
-      condition: eq(dependencies.BuildAndScan.outputs['BuildAndScan.security_failed'], 'true')
       timeoutInMinutes: 60
       inputs:
+        notifyUsers: ''
         instructions: |
-          HIGH/CRITICAL vulnerabilities detected.
-          Review logs.
-          
-          Approve to continue
-          Reject to stop
+          HIGH / CRITICAL vulnerabilities detected.
+          Review BuildAndScan logs.
+          Approve → Continue
+          Reject → Stop
         onTimeout: reject

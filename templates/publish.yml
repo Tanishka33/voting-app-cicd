@@ -1,0 +1,78 @@
+# ==========================================
+# STAGE 4: ARTIFACT PUBLISHING
+# ==========================================
+
+- stage: PublishImages
+
+  displayName: "Publish Images"
+
+  dependsOn: SecurityScan
+
+  jobs:
+
+  - job: PushImages
+
+    displayName: "Push Images"
+
+    pool:
+      name: laptop-agent
+
+    steps:
+
+# LOGIN
+
+    - script: |
+
+        echo $(DOCKER_PASS) | docker login \
+        -u $(DOCKER_USER) \
+        --password-stdin
+
+      displayName: "Docker Login"
+
+# TAG
+
+    - script: |
+
+        docker tag vote:test \
+        $(DOCKER_USER)/vote:$(Build.BuildId)
+
+        docker tag result:test \
+        $(DOCKER_USER)/result:$(Build.BuildId)
+
+        docker tag worker:test \
+        $(DOCKER_USER)/worker:$(Build.BuildId)
+
+      displayName: "Tag Images"
+
+# PUSH
+
+    - script: |
+
+        docker push \
+        $(DOCKER_USER)/vote:$(Build.BuildId)
+
+        docker push \
+        $(DOCKER_USER)/result:$(Build.BuildId)
+
+        docker push \
+        $(DOCKER_USER)/worker:$(Build.BuildId)
+
+      displayName: "Push Images"
+
+# CLEANUP
+
+    - script: |
+
+        docker logout
+
+        docker image rm vote:test || true
+
+        docker image rm result:test || true
+
+        docker image rm worker:test || true
+
+        docker image prune -af
+
+      condition: always()
+
+      displayName: "Cleanup"

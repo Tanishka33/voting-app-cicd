@@ -47,15 +47,6 @@
       displayName: "Security Scan"
       name: trivy
 
-    # CLEANUP (Runs on your laptop agent whether scan fails or passes)
-    - script: |
-        docker image rm vote:test || true
-        docker image rm result:test || true
-        docker image rm worker:test || true
-        docker image prune -af
-      condition: always()
-      displayName: "Cleanup Images"
-
   # ----------------------------------------
   # CONDITIONAL APPROVAL JOB
   # ----------------------------------------

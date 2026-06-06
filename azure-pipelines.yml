@@ -61,5 +61,5 @@ stages:
     - script: |
         sonar-scanner \
           -Dsonar.host.url=$(SONAR_URL) \
-          -Dsonar.token=$(SONAR_TOKEN)
+          -Dsonar.login=$(SONAR_TOKEN)
       displayName: "Run Sonar"

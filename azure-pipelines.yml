@@ -38,11 +38,11 @@ stages:
 
         aws --version
 
-      displayName: "Validate Tools"
+      displayName: Validate Tools
 
     - script: |
         echo ENV=$(ENV)
         echo REGION=$(AWS_REGION)
         echo CLUSTER=$(EKS_CLUSTER)
 
-      displayName: "Validate Variables"
+      displayName: Validate Variables

@@ -1,3 +1,4 @@
+stages:
 
 - stage: SourceValidation
 
@@ -27,7 +28,6 @@
       displayName: "Branch Validation"
 
     - script: |
-
         echo "Checking required folders"
 
         test -d vote
@@ -40,7 +40,6 @@
       displayName: "Repository Validation"
 
     - script: |
-
         git status
 
         git log --oneline -5

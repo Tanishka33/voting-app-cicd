@@ -1,3 +1,5 @@
+stages:
+
 - stage: CodeQuality
 
   displayName: "Code Quality"
@@ -15,13 +17,11 @@
     - checkout: self
 
     - script: |
-
         curl $(SONAR_URL)/api/system/status
 
       displayName: "Check Sonar"
 
     - script: |
-
         sonar-scanner \
         -Dsonar.host.url=$(SONAR_URL) \
         -Dsonar.login=$(SONAR_TOKEN)

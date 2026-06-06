@@ -1,16 +1,12 @@
+stages:
+
 - stage: PublishImages
 
-  displayName: "Publish Images"
-
   dependsOn: SecurityScan
-
-  condition: succeeded()
 
   jobs:
 
   - job: PushImages
-
-    displayName: "Push Images"
 
     pool:
       name: laptop-agent
@@ -23,40 +19,32 @@
         -u $(DOCKER_USER) \
         --password-stdin
 
-      displayName: "Docker Login"
+      displayName: Login
 
     - script: |
 
-        docker tag vote:test \
-        $(DOCKER_USER)/vote:$(Build.BuildId)
+        docker tag vote:test $(DOCKER_USER)/vote:$(Build.BuildId)
 
-        docker tag result:test \
-        $(DOCKER_USER)/result:$(Build.BuildId)
+        docker tag result:test $(DOCKER_USER)/result:$(Build.BuildId)
 
-        docker tag worker:test \
-        $(DOCKER_USER)/worker:$(Build.BuildId)
+        docker tag worker:test $(DOCKER_USER)/worker:$(Build.BuildId)
 
-      displayName: "Tag Images"
+      displayName: Tag
 
     - script: |
 
-        docker push \
-        $(DOCKER_USER)/vote:$(Build.BuildId)
+        docker push $(DOCKER_USER)/vote:$(Build.BuildId)
 
-        docker push \
-        $(DOCKER_USER)/result:$(Build.BuildId)
+        docker push $(DOCKER_USER)/result:$(Build.BuildId)
 
-        docker push \
-        $(DOCKER_USER)/worker:$(Build.BuildId)
+        docker push $(DOCKER_USER)/worker:$(Build.BuildId)
 
-      displayName: "Push Images"
+      displayName: Push
 
     - script: |
-
-        docker logout
 
         docker image prune -af
 
       condition: always()
 
-      displayName: "Cleanup"
+      displayName: Cleanup

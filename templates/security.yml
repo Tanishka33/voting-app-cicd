@@ -1,3 +1,5 @@
+stages:
+
 - stage: SecurityScan
 
   displayName: "Build + Security"
@@ -6,13 +8,7 @@
 
   jobs:
 
-# ----------------------------------------
-# BUILD + SCAN
-# ----------------------------------------
-
   - job: BuildAndScan
-
-    displayName: "Build And Scan"
 
     pool:
       name: laptop-agent
@@ -22,64 +18,29 @@
     - checkout: self
 
     - script: |
-
         docker build -t vote:test ./vote
-
         docker build -t result:test ./result
-
         docker build -t worker:test ./worker
 
-      displayName: "Build Images"
-
-    - script: |
-
-        docker images
-
-      displayName: "Verify Images"
+      displayName: "Build"
 
     - script: |
 
         FAILED=0
 
-        echo "===== VOTE ====="
+        trivy image --severity HIGH,CRITICAL --exit-code 1 vote:test || FAILED=1
 
-        trivy image \
-        --severity HIGH,CRITICAL \
-        --exit-code 1 \
-        vote:test || FAILED=1
+        trivy image --severity HIGH,CRITICAL --exit-code 1 result:test || FAILED=1
 
-
-        echo "===== RESULT ====="
-
-        trivy image \
-        --severity HIGH,CRITICAL \
-        --exit-code 1 \
-        result:test || FAILED=1
-
-
-        echo "===== WORKER ====="
-
-        trivy image \
-        --severity HIGH,CRITICAL \
-        --exit-code 1 \
-        worker:test || FAILED=1
-
+        trivy image --severity HIGH,CRITICAL --exit-code 1 worker:test || FAILED=1
 
         echo "##vso[task.setvariable variable=security_failed;isOutput=true]$FAILED"
 
-      displayName: "Security Scan"
-
       name: trivy
 
-
-
-# ----------------------------------------
-# APPROVAL
-# ----------------------------------------
+      displayName: "Security"
 
   - job: SecurityApproval
-
-    displayName: "Security Approval Gate"
 
     dependsOn: BuildAndScan
 
@@ -95,36 +56,20 @@
 
     - task: ManualValidation@0
 
-      timeoutInMinutes: 60
-
       inputs:
 
         notifyUsers: ''
 
         instructions: |
-
-          HIGH / CRITICAL vulnerabilities detected.
-
-          Approve → Continue
-
-          Reject → Stop
+          Approve to continue
 
         onTimeout: reject
 
-
-
-# ----------------------------------------
-# FINALIZE
-# ----------------------------------------
-
-  - job: SecurityFinalize
-
-    displayName: "Finalize Security"
+  - job: Finalize
 
     dependsOn:
 
     - BuildAndScan
-
     - SecurityApproval
 
     condition: |
@@ -133,13 +78,7 @@
       succeeded('SecurityApproval')
       )
 
-    pool:
-      name: laptop-agent
-
     steps:
 
     - script: |
-
-        echo "Security Stage Completed"
-
-      displayName: "Continue"
+        echo "Continue"

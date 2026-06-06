@@ -1,0 +1,40 @@
+trigger:
+  branches:
+    include:
+      - test
+
+pool:
+  name: Default  # Uses your self-hosted laptop agent pool
+
+variables:
+  - group: dev-vars  # Connects your secrets and variables
+
+stages:
+  - stage: Verify
+    displayName: "Stage 1: Verify Environment"
+    jobs:
+      - job: ValidateAgent
+        displayName: "Validate Agent & Tools"
+        steps:
+          - checkout: self
+
+          - script: |
+              echo "=== CHECKING REPO STATUS ==="
+              pwd
+              git branch
+            displayName: "Check Git Info"
+
+          - script: |
+              echo "=== CHECKING INSTALLED TOOLS ==="
+              docker --version
+              terraform version
+              aws --version
+              kubectl version --client
+            displayName: "Check CLI Tools"
+
+          - script: |
+              echo "=== VERIFYING VARIABLES ==="
+              echo "Environment: $(ENV)"
+              echo "AWS Region: $(AWS_REGION)"
+              echo "Target EKS Cluster: $(EKS_CLUSTER)"
+            displayName: "Verify Pipeline Variables"

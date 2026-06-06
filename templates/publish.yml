@@ -1,12 +1,10 @@
-# ==========================================
-# STAGE 4: ARTIFACT PUBLISHING
-# ==========================================
-
 - stage: PublishImages
 
   displayName: "Publish Images"
 
   dependsOn: SecurityScan
+
+  condition: succeeded()
 
   jobs:
 
@@ -19,8 +17,6 @@
 
     steps:
 
-# LOGIN
-
     - script: |
 
         echo $(DOCKER_PASS) | docker login \
@@ -28,8 +24,6 @@
         --password-stdin
 
       displayName: "Docker Login"
-
-# TAG
 
     - script: |
 
@@ -44,8 +38,6 @@
 
       displayName: "Tag Images"
 
-# PUSH
-
     - script: |
 
         docker push \
@@ -59,17 +51,9 @@
 
       displayName: "Push Images"
 
-# CLEANUP
-
     - script: |
 
         docker logout
-
-        docker image rm vote:test || true
-
-        docker image rm result:test || true
-
-        docker image rm worker:test || true
 
         docker image prune -af
 

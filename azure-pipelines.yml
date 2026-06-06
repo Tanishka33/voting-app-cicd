@@ -69,30 +69,72 @@ stages:
       displayName: "Run Sonar"
 
 # ==========================================
-# STAGE 3: BUILD + SECURITY (TRIVY)
+# STAGE 3: BUILD + SECURITY
 # ==========================================
 - stage: SecurityScan
-  displayName: "Build And Scan"
+  displayName: "Build + Security"
   dependsOn: CodeQuality
   jobs:
-  - job: BuildVote
-    displayName: "Build Vote"
+
+  - job: BuildAndScan
+    displayName: "Build And Scan"
     steps:
     - checkout: self
 
+    # BUILD
     - script: |
-        docker build \
-          -t vote:test \
-          ./vote
-      displayName: "Build Docker"
+        docker build -t vote:test ./vote
+        docker build -t result:test ./result
+        docker build -t worker:test ./worker
+      displayName: "Build Images"
 
+    # VERIFY
     - script: |
         docker images
-      displayName: "Verify Image"
+      displayName: "Verify Images"
 
+    # TRIVY SCAN
     - script: |
+        echo "========== VOTE =========="
         trivy image \
-          --exit-code 1 \
+          --exit-code 0 \
           --severity HIGH,CRITICAL \
           vote:test
-      displayName: "Run Trivy"
+
+        echo ""
+        echo "========== RESULT =========="
+        trivy image \
+          --exit-code 0 \
+          --severity HIGH,CRITICAL \
+          result:test
+
+        echo ""
+        echo "========== WORKER =========="
+        trivy image \
+          --exit-code 0 \
+          --severity HIGH,CRITICAL \
+          worker:test
+      displayName: "Security Scan"
+
+    # CLEANUP
+    - script: |
+        docker image rm vote:test || true
+        docker image rm result:test || true
+        docker image rm worker:test || true
+        docker image prune -af
+      condition: always()
+      displayName: "Cleanup"
+
+  # APPROVAL
+  - job: SecurityApproval
+    displayName: "Security Approval Gate"
+    dependsOn: BuildAndScan
+    pool: server
+    steps:
+    - task: ManualValidation@0
+      timeoutInMinutes: 60
+      inputs:
+        instructions: |
+          Review Trivy output.
+          Approve to continue.
+        onTimeout: reject

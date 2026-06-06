@@ -1,0 +1,68 @@
+# ==========================================
+# STAGE 5: INTEGRATION TEST
+# ==========================================
+
+- stage: IntegrationTest
+
+  displayName: "Integration Test"
+
+  dependsOn: PublishImages
+
+  jobs:
+
+  - job: VerifyApplication
+
+    displayName: "Verify Application"
+
+    pool:
+      name: laptop-agent
+
+    steps:
+
+    - checkout: self
+
+# START
+
+    - script: |
+
+        docker compose up -d
+
+      displayName: "Start Services"
+
+# WAIT
+
+    - script: |
+
+        echo "Waiting"
+
+        sleep 45
+
+      displayName: "Wait"
+
+# TEST
+
+    - script: |
+
+        curl -f http://localhost:8090
+
+        curl -f http://localhost:8081
+
+      displayName: "Smoke Test"
+
+# STATUS
+
+    - script: |
+
+        docker compose ps
+
+      displayName: "Container Status"
+
+# CLEANUP
+
+    - script: |
+
+        docker compose down -v
+
+      condition: always()
+
+      displayName: "Cleanup"

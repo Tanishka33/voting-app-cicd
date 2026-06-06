@@ -1,0 +1,79 @@
+- stage: SecurityScan
+  displayName: "Build + Security"
+  dependsOn: CodeQuality
+  jobs:
+
+  # ----------------------------------------
+  # BUILD + SCAN JOB
+  # ----------------------------------------
+  - job: BuildAndScan
+    displayName: "Build And Scan"
+    pool:
+      name: laptop-agent
+    steps:
+    - checkout: self
+
+    # BUILD
+    - script: |
+        docker build -t vote:test ./vote
+        docker build -t result:test ./result
+        docker build -t worker:test ./worker
+      displayName: "Build Images"
+
+    # VERIFY
+    - script: |
+        docker images
+      displayName: "Verify Images"
+
+    # TRIVY SCAN (Explicitly mapping the output variable)
+    - script: |
+        FAILED=0
+        echo "===== VOTE ====="
+        trivy image --severity HIGH,CRITICAL --exit-code 1 vote:test || FAILED=1
+
+        echo "===== RESULT ====="
+        trivy image --severity HIGH,CRITICAL --exit-code 1 result:test || FAILED=1
+
+        echo "===== WORKER ====="
+        trivy image --severity HIGH,CRITICAL --exit-code 1 worker:test || FAILED=1
+
+        if [ "$FAILED" -eq 1 ]; then
+          echo "Vulnerabilities detected!"
+          echo "##vso[task.setvariable variable=security_failed;isOutput=true]1"
+        else
+          echo "Security Passed cleanly."
+          echo "##vso[task.setvariable variable=security_failed;isOutput=true]0"
+        fi
+      displayName: "Security Scan"
+      name: trivy
+
+    # CLEANUP (Runs on your laptop agent whether scan fails or passes)
+    - script: |
+        docker image rm vote:test || true
+        docker image rm result:test || true
+        docker image rm worker:test || true
+        docker image prune -af
+      condition: always()
+      displayName: "Cleanup Images"
+
+  # ----------------------------------------
+  # CONDITIONAL APPROVAL JOB
+  # ----------------------------------------
+  - job: SecurityApproval
+    displayName: "Security Approval Gate"
+    dependsOn: BuildAndScan
+    pool: server
+    # Correct cross-job output dependency syntax:
+    condition: eq(dependencies.BuildAndScan.outputs['trivy.security_failed'], '1')
+    steps:
+    - task: ManualValidation@0
+      timeoutInMinutes: 60
+      inputs:
+        notifyUsers: ''
+        instructions: |
+          HIGH / CRITICAL vulnerabilities were detected in your container images.
+          Please review the BuildAndScan logs.
+          
+          - Approve to proceed with the execution.
+          - Reject to abort the pipeline run.
+        onTimeout: reject

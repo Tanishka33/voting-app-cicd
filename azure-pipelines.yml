@@ -4,7 +4,7 @@ trigger:
       - test
 
 pool:
-  name: Default
+  name: laptop-agent
 
 variables:
 - group: dev-vars
@@ -28,7 +28,7 @@ stages:
 
         ls -la
 
-        git branch
+        git --version
 
         docker --version
 
@@ -45,4 +45,4 @@ stages:
         echo REGION=$(AWS_REGION)
         echo CLUSTER=$(EKS_CLUSTER)
 
-      displayName: "Verify Variables"
+      displayName: "Validate Variables"

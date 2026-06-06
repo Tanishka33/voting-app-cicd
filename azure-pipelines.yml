@@ -11,38 +11,55 @@ variables:
 
 stages:
 
-- stage: Verify
+# ==========================
+# STAGE 1
+# SOURCE VALIDATION
+# ==========================
+
+- stage: SourceValidation
+
+  displayName: "Source Control Validation"
 
   jobs:
 
-  - job: ValidateAgent
+  - job: Validate
+
+    displayName: "Validate Repository"
 
     steps:
 
     - checkout: self
 
     - script: |
-        echo "Pipeline Started"
+        echo "Checking branch"
 
-        pwd
+        echo $(Build.SourceBranch)
 
-        ls -la
+        if [ "$(Build.SourceBranchName)" != "test" ]
+        then
+          echo "Only test branch allowed"
+          exit 1
+        fi
 
-        git --version
-
-        docker --version
-
-        terraform version
-
-        kubectl version --client
-
-        aws --version
-
-      displayName: Validate Tools
+      displayName: "Branch Validation"
 
     - script: |
-        echo ENV=$(ENV)
-        echo REGION=$(AWS_REGION)
-        echo CLUSTER=$(EKS_CLUSTER)
 
-      displayName: Validate Variables
+        echo "Checking required folders"
+
+        test -d vote
+        test -d worker
+        test -d result
+        test -d terraform
+
+        echo "Structure OK"
+
+      displayName: "Repository Validation"
+
+    - script: |
+
+        git status
+
+        git log --oneline -5
+
+      displayName: "Git Validation"

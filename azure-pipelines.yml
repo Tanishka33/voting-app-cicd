@@ -11,7 +11,9 @@ variables:
 
 stages:
 
+# ==========================================
 # STAGE 1: SOURCE CONTROL VALIDATION
+# ==========================================
 - stage: SourceValidation
   displayName: "Source Control Validation"
   jobs:
@@ -44,7 +46,9 @@ stages:
         git log --oneline -5
       displayName: "Git Validation"
 
+# ==========================================
 # STAGE 2: CODE QUALITY (SONARQUBE)
+# ==========================================
 - stage: CodeQuality
   displayName: "Code Quality"
   dependsOn: SourceValidation
@@ -63,3 +67,32 @@ stages:
           -Dsonar.host.url=$(SONAR_URL) \
           -Dsonar.login=$(SONAR_TOKEN)
       displayName: "Run Sonar"
+
+# ==========================================
+# STAGE 3: BUILD + SECURITY (TRIVY)
+# ==========================================
+- stage: SecurityScan
+  displayName: "Build And Scan"
+  dependsOn: CodeQuality
+  jobs:
+  - job: BuildVote
+    displayName: "Build Vote"
+    steps:
+    - checkout: self
+
+    - script: |
+        docker build \
+          -t vote:test \
+          ./vote
+      displayName: "Build Docker"
+
+    - script: |
+        docker images
+      displayName: "Verify Image"
+
+    - script: |
+        trivy image \
+          --exit-code 1 \
+          --severity HIGH,CRITICAL \
+          vote:test
+      displayName: "Run Trivy"

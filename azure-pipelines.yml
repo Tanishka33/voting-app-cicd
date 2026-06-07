@@ -27,10 +27,15 @@ stages:
 
 - template: templates/terraform-apply.yml
 
-- template: templates/kubernetes-validation.yml
-
-- template: templates/metrics-server.yml
+- template: templates/k8s-validation.yml
 
 - template: templates/gitops.yml
 
+# NEW
+- template: templates/metrics-server.yml
+
+# NEXT
+# HPA
+
+# EXISTING
 - template: templates/monitoring.yml

@@ -1,125 +1,79 @@
 stages:
-
 - stage: KubernetesValidation
-
   displayName: "Kubernetes Validation"
-
   dependsOn: TerraformProvision
-
   jobs:
-
   - job: ValidateCluster
-
     displayName: "Validate Kubernetes"
-
     pool:
       name: laptop-agent
-
     steps:
-
     - checkout: self
 
-# CONFIGURE AWS + KUBECONFIG
-
-- script: |
-
-    echo "AWS KEY EXISTS"
-
-    if [ -z "$(AWS_ACCESS_KEY_ID)" ]
-    then
-      echo "ACCESS KEY missing"
-      exit 1
-    fi
-
-    if [ -z "$(AWS_SECRET_ACCESS_KEY)" ]
-    then
-      echo "SECRET KEY missing"
-      exit 1
-    fi
-
-
-    export AWS_ACCESS_KEY_ID="$(AWS_ACCESS_KEY_ID)"
-
-    export AWS_SECRET_ACCESS_KEY="$(AWS_SECRET_ACCESS_KEY)"
-
-    export AWS_DEFAULT_REGION="$(AWS_REGION)"
-
-
-    aws sts get-caller-identity
-
-
-    aws eks update-kubeconfig \
-      --region $(AWS_REGION) \
-      --name $(EKS_CLUSTER)
-
-  displayName: "Configure Cluster"
-
-    env:
-    AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-    AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-
-# VERIFY
-
+    # CONFIGURE AWS + KUBECONFIG
     - script: |
+        echo "AWS KEY EXISTS"
+        if [ -z "$(AWS_ACCESS_KEY_ID)" ]
+        then
+          echo "ACCESS KEY missing"
+          exit 1
+        fi
+        if [ -z "$(AWS_SECRET_ACCESS_KEY)" ]
+        then
+          echo "SECRET KEY missing"
+          exit 1
+        fi
 
+        export AWS_ACCESS_KEY_ID="$(AWS_ACCESS_KEY_ID)"
+        export AWS_SECRET_ACCESS_KEY="$(AWS_SECRET_ACCESS_KEY)"
+        export AWS_DEFAULT_REGION="$(AWS_REGION)"
+
+        aws sts get-caller-identity
+        aws eks update-kubeconfig \
+          --region $(AWS_REGION) \
+          --name $(EKS_CLUSTER)
+      displayName: "Configure Cluster"
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+    # VERIFY
+    - script: |
         export AWS_PROFILE=default
-
         kubectl get nodes
-
         kubectl get ns
-
       displayName: "Validate Cluster"
 
-# MANIFEST
-
+    # MANIFEST
     - script: |
-
         export AWS_PROFILE=default
-
         kubectl apply \
-        --dry-run=client \
-        --validate=false \
-        -f k8s-specifications/
-
+          --dry-run=client \
+          --validate=false \
+          -f k8s-specifications/
       displayName: "Manifest Validation"
 
-# RBAC
-
+    # RBAC
     - script: |
-
         export AWS_PROFILE=default
-
         kubectl auth can-i get pods
-
       displayName: "RBAC Validation"
 
-# SECRET
-
+    # SECRET
     - script: |
-
         export AWS_PROFILE=default
-
         kubectl get secrets
-
       displayName: "Secrets Validation"
 
-# NETWORK
-
+    # NETWORK
     - script: |
-
         export AWS_PROFILE=default
-
         kubectl get networkpolicy \
-        --all-namespaces || true
-
+          --all-namespaces || true
       displayName: "Network Validation"
 
-# CLEAN
-
+    # CLEAN
     - script: |
-
         rm -rf ~/.aws
-
       condition: always()
-
       displayName: "Cleanup"

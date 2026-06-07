@@ -19,7 +19,8 @@ stages:
 
     - checkout: self
 
-# CONFIGURE
+
+# CONNECT
 
     - script: |
 
@@ -28,14 +29,15 @@ stages:
         aws sts get-caller-identity
 
         aws eks update-kubeconfig \
-        --region $(AWS_REGION) \
-        --name $(EKS_CLUSTER)
+          --region $(AWS_REGION) \
+          --name $(EKS_CLUSTER)
 
       displayName: "Configure Cluster"
 
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
 
 # VERIFY
 
@@ -51,16 +53,22 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
+
 # MANIFEST
 
     - script: |
 
         kubectl apply \
-        --dry-run=client \
-        --validate=false \
-        -f k8s-specifications/
+          --dry-run=client \
+          --validate=false \
+          -f k8s-specifications/
 
       displayName: "Manifest Validation"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
 
 # RBAC
 
@@ -70,7 +78,12 @@ stages:
 
       displayName: "RBAC Validation"
 
-# SECRET
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
+# SECRETS
 
     - script: |
 
@@ -78,11 +91,20 @@ stages:
 
       displayName: "Secrets Validation"
 
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
 # NETWORK
 
     - script: |
 
         kubectl get networkpolicy \
-        --all-namespaces || true
+          --all-namespaces || true
 
       displayName: "Network Validation"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

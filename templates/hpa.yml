@@ -1,0 +1,67 @@
+stages:
+
+- stage: Autoscaling
+
+  displayName: "Horizontal Pod Autoscaling"
+
+  dependsOn: MetricsServer
+
+
+  jobs:
+
+  - job: ConfigureHPA
+
+    pool:
+      name: laptop-agent
+
+
+    steps:
+
+    - checkout: self
+
+
+    - script: |
+
+        aws eks update-kubeconfig \
+        --region $(AWS_REGION) \
+        --name $(EKS_CLUSTER)
+
+      displayName: "Connect"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
+
+    - script: |
+
+        kubectl autoscale \
+        deployment vote \
+        --cpu-percent=50 \
+        --min=1 \
+        --max=3
+
+        kubectl autoscale \
+        deployment result \
+        --cpu-percent=50 \
+        --min=1 \
+        --max=3
+
+      displayName: "Create HPA"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
+
+    - script: |
+
+        kubectl get hpa
+
+      displayName: "Verify"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

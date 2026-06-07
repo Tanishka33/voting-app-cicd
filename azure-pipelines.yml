@@ -33,4 +33,6 @@ stages:
 
 - template: templates/metrics-server.yml
 
+- template: templates/hpa.yml
+
 - template: templates/monitoring.yml

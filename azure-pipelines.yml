@@ -11,36 +11,14 @@ variables:
 
 stages:
 
-# ==========================================
-# STAGE 1
-# SOURCE CONTROL VALIDATION
-# ==========================================
 - template: templates/source.yml
 
-
-# ==========================================
-# STAGE 2
-# CODE QUALITY
-# ==========================================
 - template: templates/quality.yml
 
-
-# ==========================================
-# STAGE 3
-# BUILD + SECURITY
-# ==========================================
 - template: templates/security.yml
 
-
-# ==========================================
-# STAGE 4
-# ARTIFACT PUBLISHING
-# ==========================================
 - template: templates/publish.yml
 
-
-# ==========================================
-# STAGE 5
-# INTEGRATION TEST
-# ==========================================
 - template: templates/integration.yml
+
+- template: templates/terraform-validation.yml

@@ -19,7 +19,7 @@ stages:
 
     - checkout: self
 
-# CONNECT
+# AWS + KUBECONFIG
 
     - script: |
 
@@ -29,15 +29,23 @@ stages:
 
         export AWS_DEFAULT_REGION=$(AWS_REGION)
 
+        aws sts get-caller-identity
+
         aws eks update-kubeconfig \
         --region $(AWS_REGION) \
         --name $(EKS_CLUSTER)
 
-      displayName: "Configure kubectl"
+      displayName: "Configure Cluster"
 
-# CLUSTER
+# VERIFY
 
     - script: |
+
+        export AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID)
+
+        export AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
+
+        export AWS_DEFAULT_REGION=$(AWS_REGION)
 
         kubectl get nodes
 
@@ -55,7 +63,7 @@ stages:
 
       displayName: "Manifest Validation"
 
-# SECURITY
+# RBAC
 
     - script: |
 
@@ -63,7 +71,7 @@ stages:
 
       displayName: "RBAC Validation"
 
-# SECRET CHECK
+# SECRET
 
     - script: |
 

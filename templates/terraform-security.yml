@@ -1,0 +1,40 @@
+stages:
+
+- stage: TerraformSecurity
+
+  displayName: "Terraform Security"
+
+  dependsOn: TerraformValidation
+
+  jobs:
+
+  - job: CheckovScan
+
+    displayName: "Terraform Compliance"
+
+    pool:
+      name: laptop-agent
+
+    steps:
+
+    - checkout: self
+
+# SCAN
+
+    - script: |
+
+        cd terraform
+
+        checkov \
+        -d . \
+        --soft-fail
+
+      displayName: "Run Checkov"
+
+# SAVE
+
+    - script: |
+
+        echo "Terraform security completed"
+
+      displayName: "Complete"

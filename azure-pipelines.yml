@@ -22,3 +22,5 @@ stages:
 - template: templates/integration.yml
 
 - template: templates/terraform-validation.yml
+
+- template: templates/terraform-security.yml

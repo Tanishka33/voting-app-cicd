@@ -4,3 +4,13 @@ bin/
 obj/
 .vs/
 node_modules/
+
+*.tfplan
+*.tfvars
+*.tfvars.json
+.terraformrc
+terraform.rc
+*.tfstate
+*.tfstate.*
+
+terraform/.terraform/

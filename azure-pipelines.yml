@@ -25,9 +25,13 @@ stages:
 
 - template: templates/terraform-security.yml
 
+- template: templates/terraform-approval.yml
+
 - template: templates/terraform-apply.yml
 
-- template: templates/k8s-validation.yml
+- template: templates/kubernetes-validation.yml
+
+- template: templates/metrics-server.yml
 
 - template: templates/gitops.yml
 

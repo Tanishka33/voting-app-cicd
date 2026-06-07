@@ -30,3 +30,5 @@ stages:
 - template: templates/k8s-validation.yml
 
 - template: templates/gitops.yml
+
+- template: templates/monitoring.yml

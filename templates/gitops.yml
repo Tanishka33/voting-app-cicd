@@ -39,7 +39,7 @@ stages:
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 
-# INSTALL
+# INSTALL ARGO
 
     - script: |
 
@@ -94,12 +94,18 @@ stages:
         echo ""
         echo "===================="
         echo "ARGO LOGIN"
-        echo "URL: http://localhost:8085"
+        echo ""
+        echo "RUN:"
+        echo "kubectl port-forward svc/argocd-server -n argocd 8085:80"
+        echo ""
+        echo "URL:"
+        echo "http://localhost:8085"
+        echo ""
         echo "USER: admin"
         echo "PASS: $PASS"
         echo "===================="
 
-      displayName: "Show Password"
+      displayName: "Show Argo Login"
 
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
@@ -124,7 +130,7 @@ stages:
 
     - script: |
 
-        sleep 20
+        sleep 15
 
         kubectl get applications -n argocd
 
@@ -137,20 +143,27 @@ stages:
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 
-# SHOW COMMANDS
+# SHOW APP URL
 
     - script: |
 
-        echo ""
-        echo "OPEN ARGO:"
-        echo "kubectl port-forward svc/argocd-server -n argocd 8085:80"
+        NODE=$(kubectl get nodes \
+        -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
 
         echo ""
-        echo "OPEN VOTE:"
-        echo "kubectl port-forward svc/vote 8090:80"
-
+        echo "===================="
+        echo "APPLICATION URLS"
         echo ""
-        echo "OPEN RESULT:"
-        echo "kubectl port-forward svc/result 8081:80"
+        echo "VOTE:"
+        echo "http://$NODE:31000"
+        echo ""
+        echo "RESULT:"
+        echo "http://$NODE:31001"
+        echo ""
+        echo "===================="
 
-      displayName: "Show Access Commands"
+      displayName: "Show Application URLs"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

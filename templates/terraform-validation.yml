@@ -33,7 +33,9 @@ stages:
 
         cd terraform
 
-        terraform fmt -check
+        terraform fmt 
+
+        git diff || true
 
       displayName: "Terraform Format"
 

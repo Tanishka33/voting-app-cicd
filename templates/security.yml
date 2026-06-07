@@ -1,84 +1,58 @@
 stages:
-
 - stage: SecurityScan
-
   displayName: "Build + Security"
-
   dependsOn: CodeQuality
-
   jobs:
 
   - job: BuildAndScan
-
     pool:
       name: laptop-agent
-
     steps:
-
     - checkout: self
-
     - script: |
         docker build -t vote:test ./vote
         docker build -t result:test ./result
         docker build -t worker:test ./worker
-
       displayName: "Build"
-
     - script: |
-
         FAILED=0
-
         trivy image --severity HIGH,CRITICAL --exit-code 1 vote:test || FAILED=1
-
         trivy image --severity HIGH,CRITICAL --exit-code 1 result:test || FAILED=1
-
         trivy image --severity HIGH,CRITICAL --exit-code 1 worker:test || FAILED=1
-
         echo "##vso[task.setvariable variable=security_failed;isOutput=true]$FAILED"
-
       name: trivy
-
       displayName: "Security"
 
   - job: SecurityApproval
-
     dependsOn: BuildAndScan
-
     pool: server
-
     condition: |
       eq(
-      dependencies.BuildAndScan.outputs['trivy.security_failed'],
-      '1'
+        dependencies.BuildAndScan.outputs['trivy.security_failed'],
+        '1'
       )
-
     steps:
-
     - task: ManualValidation@0
-
       inputs:
-
         notifyUsers: ''
-
         instructions: |
-          Approve to continue
-
+          SECURITY WARNING: HIGH or CRITICAL vulnerabilities were discovered during the Trivy image scan step.
+          
+          Please check the logs of the 'BuildAndScan' job to view the full vulnerability report details.
+          
+          Click 'Approve' to bypass these vulnerability warnings and proceed with image publishing.
+          Click 'Reject' to immediately terminate the pipeline execution so you can fix the dependencies.
         onTimeout: reject
 
   - job: Finalize
-
     dependsOn:
-
     - BuildAndScan
     - SecurityApproval
-
     condition: |
       or(
-      succeeded('BuildAndScan'),
-      succeeded('SecurityApproval')
+        succeeded('BuildAndScan'),
+        succeeded('SecurityApproval')
       )
-
     steps:
-
     - script: |
         echo "Continue"

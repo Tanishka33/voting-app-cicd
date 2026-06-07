@@ -36,3 +36,5 @@ stages:
 - template: templates/hpa.yml
 
 - template: templates/monitoring.yml
+
+- template: templates/rollback.yml

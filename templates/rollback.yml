@@ -1,0 +1,71 @@
+stages:
+
+- stage: Rollback
+
+  displayName: "Failure Recovery"
+
+  dependsOn: HPA
+
+
+  jobs:
+
+  - job: PrepareRollback
+
+    displayName: "Prepare Rollback"
+
+    pool:
+      name: laptop-agent
+
+
+    steps:
+
+    - checkout: self
+
+
+# CONNECT
+
+    - script: |
+
+        aws eks update-kubeconfig \
+        --region $(AWS_REGION) \
+        --name $(EKS_CLUSTER)
+
+      displayName: "Connect"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
+
+# SHOW HISTORY
+
+    - script: |
+
+        kubectl rollout history \
+        deployment/vote
+
+        kubectl rollout history \
+        deployment/result
+
+      displayName: "Verify Rollback Exists"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
+
+# VERIFY CURRENT HEALTH
+
+    - script: |
+
+        kubectl get deployment
+
+        kubectl get pods
+
+      displayName: "Validate Deployment"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

@@ -11,7 +11,7 @@ stages:
 
   - job: InstallMonitoring
 
-    displayName: "Install Prometheus + Grafana"
+    displayName: "Install Monitoring"
 
     pool:
       name: laptop-agent
@@ -26,11 +26,9 @@ stages:
 
     - script: |
 
-        export AWS_DEFAULT_REGION=$(AWS_REGION)
-
         aws eks update-kubeconfig \
-          --region $(AWS_REGION) \
-          --name $(EKS_CLUSTER)
+        --region $(AWS_REGION) \
+        --name $(EKS_CLUSTER)
 
       displayName: "Connect"
 
@@ -39,7 +37,8 @@ stages:
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 
-# INSTALL
+
+# INSTALL PROMETHEUS LIGHT
 
     - script: |
 
@@ -60,18 +59,33 @@ stages:
         --namespace monitoring \
         --create-namespace \
         \
-        --set server.persistentVolume.enabled=false \
-        \
         --set alertmanager.enabled=false \
         \
         --set pushgateway.enabled=false \
         \
         --set kubeStateMetrics.enabled=false \
         \
+        --set server.persistentVolume.enabled=false \
+        \
         --set server.replicaCount=1 \
         \
-        --set prometheus-node-exporter.enabled=true
+        --set server.resources.requests.memory=256Mi \
+        \
+        --set server.resources.requests.cpu=200m \
+        \
+        --set prometheus-node-exporter.resources.requests.memory=32Mi
 
+      displayName: "Install Prometheus"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
+
+# INSTALL GRAFANA LIGHT
+
+    - script: |
 
         helm upgrade \
         --install \
@@ -86,40 +100,32 @@ stages:
         \
         --set service.type=ClusterIP \
         \
-        --set resources.requests.memory=128Mi \
+        --set resources.requests.memory=64Mi \
         \
-        --set resources.requests.cpu=100m
+        --set resources.requests.cpu=50m
 
-      displayName: "Install Monitoring"
+      displayName: "Install Grafana"
 
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 
+
 # WAIT
 
     - script: |
 
-        export AWS_DEFAULT_REGION=$(AWS_REGION)
-
         aws eks update-kubeconfig \
-          --region $(AWS_REGION) \
-          --name $(EKS_CLUSTER)
-
+        --region $(AWS_REGION) \
+        --name $(EKS_CLUSTER)
 
         kubectl wait \
         --for=condition=ready \
         pod \
         -l app.kubernetes.io/name=grafana \
         -n monitoring \
-        --timeout=100s
-
-
-        kubectl rollout status \
-        deployment/prometheus-server \
-        -n monitoring \
-        --timeout=100s
+        --timeout=80s
 
       displayName: "Wait"
 
@@ -128,82 +134,39 @@ stages:
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 
-# VERIFY
 
-    - script: |
-
-        kubectl get pods -n monitoring
-
-      displayName: "Verify"
-
-      env:
-        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-
-
-# PASSWORD + URL
+# SHOW LOGIN
 
     - script: |
 
         PASS=$(
-          kubectl \
-          get secret \
-          -n monitoring \
-          grafana \
-          -o jsonpath="{.data.admin-password}" \
-          | base64 -d
+        kubectl get secret \
+        -n monitoring \
+        grafana \
+        -o jsonpath="{.data.admin-password}" \
+        | base64 -d
         )
 
-
         echo ""
-
-        echo "======================"
-
-        echo "GRAFANA"
-
-        echo ""
-
         echo "RUN:"
+        echo ""
 
         echo "kubectl port-forward svc/grafana -n monitoring 3000:80"
 
         echo ""
 
-        echo "URL"
-
+        echo "URL:"
         echo "http://localhost:3000"
 
         echo ""
 
-        echo "USER"
-
+        echo "USER:"
         echo "admin"
 
         echo ""
 
-        echo "PASSWORD"
-
-        echo "$PASS"
-
-        echo ""
-
-        echo "PROMETHEUS"
-
-        echo ""
-
-        echo "RUN"
-
-        echo "kubectl port-forward svc/prometheus-server -n monitoring 9090:80"
-
-        echo ""
-
-        echo "URL"
-
-        echo "http://localhost:9090"
-
-        echo ""
-
-        echo "======================"
+        echo "PASS:"
+        echo $PASS
 
       displayName: "Show Login"
 

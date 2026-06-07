@@ -1,99 +1,70 @@
 stages:
-
 - stage: GitOpsDeployment
-
   displayName: "GitOps Deployment"
-
   dependsOn: KubernetesValidation
-
   jobs:
-
   - job: Deploy
-
     displayName: "Install Argo + Deploy"
-
     pool:
       name: laptop-agent
-
     steps:
-
     - checkout: self
 
-# CONNECT
-
+    # CONNECT
     - script: |
-
         export AWS_DEFAULT_REGION=$(AWS_REGION)
-
         aws eks update-kubeconfig \
-        --region $(AWS_REGION) \
-        --name $(EKS_CLUSTER)
-
+          --region $(AWS_REGION) \
+          --name $(EKS_CLUSTER)
       displayName: "Connect"
-
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-# INSTALL
-
+    # INSTALL
     - script: |
-
-        kubectl create ns argocd \
-        --dry-run=client \
-        -o yaml \
-        | kubectl apply -f -
+        kubectl create namespace argocd \
+          --dry-run=client \
+          -o yaml \
+          | kubectl apply -f -
 
         kubectl apply \
-        -n argocd \
-        -f \
-        https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
+          --server-side \
+          --force-conflicts \
+          -n argocd \
+          -f \
+          https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
       displayName: "Install Argo"
-
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-# WAIT
-
+    # WAIT
     - script: |
-
         kubectl wait \
-        --for=condition=available \
-        deployment/argocd-server \
-        -n argocd \
-        --timeout=600s
-
+          --for=condition=available \
+          deployment/argocd-server \
+          -n argocd \
+          --timeout=600s
       displayName: "Wait Argo"
-
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-# DEPLOY
-
+    # DEPLOY
     - script: |
-
         kubectl apply \
-        -f gitops/application.yaml
-
+          -f gitops/application.yaml
       displayName: "Create Application"
-
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-# VERIFY
-
+    # VERIFY
     - script: |
-
         sleep 60
-
         kubectl get pods -A
-
       displayName: "Verify"
-
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

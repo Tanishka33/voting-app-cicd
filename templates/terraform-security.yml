@@ -8,9 +8,11 @@ stages:
 
   jobs:
 
-  - job: CheckovScan
+# --------------------------------
 
-    displayName: "Terraform Compliance"
+  - job: Checkov
+
+    displayName: "Run Checkov"
 
     pool:
       name: laptop-agent
@@ -19,22 +21,85 @@ stages:
 
     - checkout: self
 
-# SCAN
-
     - script: |
+
+        FAILED=0
 
         cd terraform
 
         checkov \
         -d . \
-        --soft-fail
+        || FAILED=1
 
-      displayName: "Run Checkov"
 
-# SAVE
+        echo "##vso[task.setvariable variable=tf_security_failed;isOutput=true]$FAILED"
+
+      displayName: "Terraform Security"
+
+      name: checkov
+
+# --------------------------------
+
+  - job: TerraformApproval
+
+    displayName: "Terraform Security Approval"
+
+    dependsOn: Checkov
+
+    pool: server
+
+    condition: |
+      eq(
+      dependencies.Checkov.outputs['checkov.tf_security_failed'],
+      '1'
+      )
+
+    steps:
+
+    - task: ManualValidation@0
+
+      timeoutInMinutes: 60
+
+      inputs:
+
+        notifyUsers: ''
+
+        instructions: |
+
+          Terraform security findings detected.
+
+          Review Checkov report.
+
+          Approve → Continue
+
+          Reject → Stop
+
+        onTimeout: reject
+
+# --------------------------------
+
+  - job: FinalizeTerraformSecurity
+
+    displayName: "Finalize"
+
+    dependsOn:
+
+    - Checkov
+    - TerraformApproval
+
+    condition: |
+      or(
+      succeeded('Checkov'),
+      succeeded('TerraformApproval')
+      )
+
+    pool:
+      name: laptop-agent
+
+    steps:
 
     - script: |
 
         echo "Terraform security completed"
 
-      displayName: "Complete"
+      displayName: "Continue"

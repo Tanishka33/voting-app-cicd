@@ -1,0 +1,65 @@
+stages:
+
+- stage: TerraformProvision
+
+  displayName: "Infrastructure Provision"
+
+  dependsOn: TerraformSecurity
+
+  jobs:
+
+# -------------------
+
+  - job: Provision
+
+    displayName: "Terraform Execute"
+
+    pool:
+      name: laptop-agent
+
+    steps:
+
+    - checkout: self
+
+# LOGIN
+
+    - script: |
+
+        export AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID)
+
+        export AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
+
+        export AWS_DEFAULT_REGION=$(AWS_REGION)
+
+        aws sts get-caller-identity
+
+      displayName: "Verify AWS"
+
+# EXECUTE
+
+    - script: |
+
+        cd terraform
+
+        terraform init
+
+
+        if [ "$(TF_ACTION)" = "apply" ]
+        then
+
+          terraform apply \
+          -auto-approve
+
+        elif [ "$(TF_ACTION)" = "destroy" ]
+        then
+
+          terraform destroy \
+          -auto-approve
+
+        else
+
+          echo "Skipping terraform"
+
+        fi
+
+      displayName: "Apply Skip Destroy"

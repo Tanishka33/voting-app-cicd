@@ -1,0 +1,31 @@
+stages:
+
+- stage: TerraformApproval
+
+  displayName: "Terraform Approval"
+
+  dependsOn: TerraformProvision
+
+  jobs:
+
+  - job: Approval
+
+    pool: server
+
+    steps:
+
+    - task: ManualValidation@0
+
+      timeoutInMinutes: 120
+
+      inputs:
+
+        notifyUsers: ''
+
+        instructions: |
+
+          Confirm infrastructure action.
+
+          TF_ACTION=$(TF_ACTION)
+
+        onTimeout: reject

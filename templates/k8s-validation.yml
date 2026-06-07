@@ -19,69 +19,70 @@ stages:
 
     - checkout: self
 
-# STEP 1
+# CONFIGURE
 
     - script: |
 
-        echo "Checking variables"
-
-        if [ -z "$AWS_ACCESS_KEY_ID" ]
-        then
-          echo "ACCESS_KEY EMPTY"
-        else
-          echo "ACCESS_KEY PRESENT"
-        fi
-
-        if [ -z "$AWS_SECRET_ACCESS_KEY" ]
-        then
-          echo "SECRET_KEY EMPTY"
-          exit 1
-        else
-          echo "SECRET_KEY PRESENT"
-        fi
-
-      displayName: "Check Variables"
-
-      env:
-        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-
-# STEP 2
-
-    - script: |
-
-        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
-
-        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
-
-        export AWS_DEFAULT_REGION="$(AWS_REGION)"
+        export AWS_DEFAULT_REGION=$(AWS_REGION)
 
         aws sts get-caller-identity
-
-      displayName: "Test AWS"
-
-      env:
-        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-
-# STEP 3
-
-    - script: |
-
-        export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
-
-        export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
-
-        export AWS_DEFAULT_REGION="$(AWS_REGION)"
 
         aws eks update-kubeconfig \
         --region $(AWS_REGION) \
         --name $(EKS_CLUSTER)
 
+      displayName: "Configure Cluster"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+# VERIFY
+
+    - script: |
+
         kubectl get nodes
+
+        kubectl get ns
 
       displayName: "Validate Cluster"
 
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+# MANIFEST
+
+    - script: |
+
+        kubectl apply \
+        --dry-run=client \
+        --validate=false \
+        -f k8s-specifications/
+
+      displayName: "Manifest Validation"
+
+# RBAC
+
+    - script: |
+
+        kubectl auth can-i get pods
+
+      displayName: "RBAC Validation"
+
+# SECRET
+
+    - script: |
+
+        kubectl get secrets
+
+      displayName: "Secrets Validation"
+
+# NETWORK
+
+    - script: |
+
+        kubectl get networkpolicy \
+        --all-namespaces || true
+
+      displayName: "Network Validation"

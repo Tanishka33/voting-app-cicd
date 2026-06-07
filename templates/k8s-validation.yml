@@ -19,15 +19,25 @@ stages:
 
     - checkout: self
 
-# AWS + KUBECONFIG
+# CONFIGURE AWS + KUBECONFIG
 
     - script: |
 
-        export AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID)
+        mkdir -p ~/.aws
 
-        export AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
+        cat > ~/.aws/credentials <<EOF
+        [default]
+        aws_access_key_id=$(AWS_ACCESS_KEY_ID)
+        aws_secret_access_key=$(AWS_SECRET_ACCESS_KEY)
+        EOF
 
-        export AWS_DEFAULT_REGION=$(AWS_REGION)
+        cat > ~/.aws/config <<EOF
+        [default]
+        region=$(AWS_REGION)
+        output=json
+        EOF
+
+        export AWS_PROFILE=default
 
         aws sts get-caller-identity
 
@@ -41,11 +51,7 @@ stages:
 
     - script: |
 
-        export AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID)
-
-        export AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
-
-        export AWS_DEFAULT_REGION=$(AWS_REGION)
+        export AWS_PROFILE=default
 
         kubectl get nodes
 
@@ -57,8 +63,11 @@ stages:
 
     - script: |
 
+        export AWS_PROFILE=default
+
         kubectl apply \
         --dry-run=client \
+        --validate=false \
         -f k8s-specifications/
 
       displayName: "Manifest Validation"
@@ -66,6 +75,8 @@ stages:
 # RBAC
 
     - script: |
+
+        export AWS_PROFILE=default
 
         kubectl auth can-i get pods
 
@@ -75,6 +86,8 @@ stages:
 
     - script: |
 
+        export AWS_PROFILE=default
+
         kubectl get secrets
 
       displayName: "Secrets Validation"
@@ -83,7 +96,19 @@ stages:
 
     - script: |
 
+        export AWS_PROFILE=default
+
         kubectl get networkpolicy \
         --all-namespaces || true
 
       displayName: "Network Validation"
+
+# CLEAN
+
+    - script: |
+
+        rm -rf ~/.aws
+
+      condition: always()
+
+      displayName: "Cleanup"

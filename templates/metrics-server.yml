@@ -4,12 +4,14 @@ stages:
 
   displayName: "Install Metrics Server"
 
-  dependsOn: Monitoring
+  dependsOn: GitOpsDeployment
 
 
   jobs:
 
-  - job: Install
+  - job: InstallMetrics
+
+    displayName: "Install Metrics"
 
     pool:
       name: laptop-agent
@@ -22,40 +24,44 @@ stages:
 
     - script: |
 
-        export AWS_DEFAULT_REGION=$(AWS_REGION)
-
         aws eks update-kubeconfig \
         --region $(AWS_REGION) \
         --name $(EKS_CLUSTER)
 
-        kubectl apply -f \
-https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-      displayName: "Install Metrics"
+      displayName: "Connect"
 
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
+
+    - script: |
+
+        kubectl apply \
+        -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+      displayName: "Install"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
 
 
     - script: |
 
         kubectl patch deployment metrics-server \
         -n kube-system \
-        --type='json' \
-        -p='[
-        {
-        "op":"add",
-        "path":"/spec/template/spec/containers/0/args/-",
-        "value":"--kubelet-insecure-tls"
-        }
-        ]'
+        --type=json \
+        -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
 
-      displayName: "Patch Metrics"
+      displayName: "Patch"
 
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
 
 
     - script: |
@@ -63,13 +69,14 @@ https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/compo
         kubectl rollout status \
         deployment/metrics-server \
         -n kube-system \
-        --timeout=80s
+        --timeout=180s
 
       displayName: "Wait"
 
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
 
 
     - script: |

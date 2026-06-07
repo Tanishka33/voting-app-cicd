@@ -31,11 +31,6 @@ stages:
 
 - template: templates/gitops.yml
 
-# NEW
 - template: templates/metrics-server.yml
 
-# NEXT
-# HPA
-
-# EXISTING
 - template: templates/monitoring.yml

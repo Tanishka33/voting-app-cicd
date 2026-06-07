@@ -25,8 +25,6 @@ stages:
 
 - template: templates/terraform-security.yml
 
-- template: templates/terraform-approval.yml
-
 - template: templates/terraform-apply.yml
 
 - template: templates/kubernetes-validation.yml

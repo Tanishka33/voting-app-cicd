@@ -1,31 +1,23 @@
 stages:
 
 - stage: GitOpsDeployment
-
   displayName: "GitOps Deployment"
-
   dependsOn: KubernetesValidation
-
 
   jobs:
 
   - job: Deploy
-
     displayName: "Install Argo And Deploy"
 
     pool:
       name: laptop-agent
 
-
     steps:
-
     - checkout: self
 
 
 # CONNECT
-
     - script: |
-
         export AWS_DEFAULT_REGION=$(AWS_REGION)
 
         aws eks update-kubeconfig \
@@ -40,7 +32,6 @@ stages:
 
 
 # INSTALL ARGO
-
     - script: |
 
         kubectl create namespace argocd \
@@ -63,7 +54,6 @@ stages:
 
 
 # WAIT
-
     - script: |
 
         kubectl rollout status \
@@ -79,7 +69,6 @@ stages:
 
 
 # PASSWORD
-
     - script: |
 
         PASS=$(
@@ -113,9 +102,7 @@ stages:
 
 
 # CREATE APP
-
     - script: |
-
         kubectl apply \
           -f ./gitops/application.yaml
 
@@ -127,13 +114,10 @@ stages:
 
 
 # VERIFY
-
     - script: |
 
         sleep 15
-
         kubectl get applications -n argocd
-
         kubectl get pods -A
 
       displayName: "Verify"
@@ -146,7 +130,6 @@ stages:
 # SHOW APP URL
 
     - script: |
-
         NODE=$(kubectl get nodes \
         -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
 

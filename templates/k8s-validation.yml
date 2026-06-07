@@ -7,7 +7,6 @@ stages:
   dependsOn: TerraformProvision
 
   jobs:
-
   - job: ValidateCluster
 
     displayName: "Validate Kubernetes"
@@ -16,12 +15,9 @@ stages:
       name: laptop-agent
 
     steps:
-
     - checkout: self
 
-
 # CONNECT
-
     - script: |
 
         export AWS_DEFAULT_REGION=$(AWS_REGION)
@@ -38,11 +34,9 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
 # VERIFY
 
     - script: |
-
         kubectl get nodes
 
         kubectl get ns
@@ -53,9 +47,7 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
 # MANIFEST
-
     - script: |
 
         kubectl apply \
@@ -71,7 +63,6 @@ stages:
 
 
 # RBAC
-
     - script: |
 
         kubectl auth can-i get pods
@@ -82,11 +73,8 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
 # SECRETS
-
     - script: |
-
         kubectl get secrets
 
       displayName: "Secrets Validation"
@@ -95,9 +83,7 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
 # NETWORK
-
     - script: |
 
         kubectl get networkpolicy \

@@ -6,7 +6,6 @@ stages:
 
   dependsOn: HPA
 
-
   jobs:
 
   - job: PrepareRollback
@@ -16,14 +15,11 @@ stages:
     pool:
       name: laptop-agent
 
-
     steps:
 
     - checkout: self
 
-
 # CONNECT
-
     - script: |
 
         aws eks update-kubeconfig \
@@ -36,10 +32,7 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
-
 # SHOW HISTORY
-
     - script: |
 
         kubectl rollout history \
@@ -54,10 +47,7 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
-
 # VERIFY CURRENT HEALTH
-
     - script: |
 
         kubectl get deployment

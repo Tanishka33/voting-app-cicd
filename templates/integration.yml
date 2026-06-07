@@ -3,18 +3,14 @@ stages:
 - stage: IntegrationTest
 
   dependsOn: PublishImages
-
   jobs:
-
   - job: Verify
 
     pool:
       name: laptop-agent
 
     steps:
-
     - checkout: self
-
     - script: |
         docker compose up -d
 
@@ -22,7 +18,6 @@ stages:
 
     - script: |
         sleep 45
-
       displayName: Wait
 
     - script: |

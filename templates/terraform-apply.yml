@@ -8,8 +8,6 @@ stages:
 
   jobs:
 
-# -------------------------
-
   - job: Approval
 
     displayName: "Infrastructure Approval"
@@ -37,8 +35,6 @@ stages:
           Reject → Stop
 
         onTimeout: reject
-
-# -------------------------
 
   - job: Provision
 

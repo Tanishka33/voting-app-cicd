@@ -8,8 +8,6 @@ stages:
 
   jobs:
 
-# --------------------------------
-
   - job: Checkov
 
     displayName: "Run Checkov"
@@ -37,8 +35,6 @@ stages:
       displayName: "Terraform Security"
 
       name: checkov
-
-# --------------------------------
 
   - job: TerraformApproval
 
@@ -76,7 +72,6 @@ stages:
 
         onTimeout: reject
 
-# --------------------------------
 
   - job: FinalizeTerraformSecurity
 

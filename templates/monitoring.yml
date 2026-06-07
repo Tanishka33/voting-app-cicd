@@ -6,7 +6,6 @@ stages:
 
   dependsOn: GitOpsDeployment
 
-
   jobs:
 
   - job: InstallMonitoring
@@ -16,14 +15,11 @@ stages:
     pool:
       name: laptop-agent
 
-
     steps:
 
     - checkout: self
 
-
 # CONNECT
-
     - script: |
 
         aws eks update-kubeconfig \
@@ -36,10 +32,7 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
-
 # INSTALL PROMETHEUS LIGHT
-
     - script: |
 
         helm repo add prometheus-community \
@@ -81,8 +74,6 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
-
 # INSTALL GRAFANA LIGHT
 
     - script: |
@@ -110,8 +101,6 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
-
 # WAIT
 
     - script: |
@@ -132,8 +121,6 @@ stages:
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-
-
 
 # SHOW LOGIN
 

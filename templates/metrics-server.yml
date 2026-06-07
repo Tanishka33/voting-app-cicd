@@ -1,11 +1,8 @@
 stages:
 
 - stage: MetricsServer
-
   displayName: "Install Metrics Server"
-
   dependsOn: GitOpsDeployment
-
 
   jobs:
 
@@ -16,11 +13,9 @@ stages:
     pool:
       name: laptop-agent
 
-
     steps:
 
     - checkout: self
-
 
     - script: |
 
@@ -34,8 +29,6 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
-
     - script: |
 
         kubectl apply \
@@ -46,8 +39,6 @@ stages:
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-
-
 
     - script: |
 
@@ -62,8 +53,6 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
-
     - script: |
 
         kubectl rollout status \
@@ -76,8 +65,6 @@ stages:
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-
-
 
     - script: |
 

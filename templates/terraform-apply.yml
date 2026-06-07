@@ -8,11 +8,43 @@ stages:
 
   jobs:
 
-# -------------------
+# -------------------------
+
+  - job: Approval
+
+    displayName: "Infrastructure Approval"
+
+    pool: server
+
+    steps:
+
+    - task: ManualValidation@0
+
+      timeoutInMinutes: 120
+
+      inputs:
+
+        notifyUsers: ''
+
+        instructions: |
+
+          Infrastructure Action:
+
+          TF_ACTION=$(TF_ACTION)
+
+          Approve → Execute
+
+          Reject → Stop
+
+        onTimeout: reject
+
+# -------------------------
 
   - job: Provision
 
     displayName: "Terraform Execute"
+
+    dependsOn: Approval
 
     pool:
       name: laptop-agent
@@ -21,7 +53,7 @@ stages:
 
     - checkout: self
 
-# LOGIN
+# AWS
 
     - script: |
 
@@ -35,7 +67,7 @@ stages:
 
       displayName: "Verify AWS"
 
-# EXECUTE
+# APPLY
 
     - script: |
 
@@ -43,23 +75,20 @@ stages:
 
         terraform init
 
-
         if [ "$(TF_ACTION)" = "apply" ]
         then
 
-          terraform apply \
-          -auto-approve
+          terraform apply -auto-approve
 
         elif [ "$(TF_ACTION)" = "destroy" ]
         then
 
-          terraform destroy \
-          -auto-approve
+          terraform destroy -auto-approve
 
         else
 
-          echo "Skipping terraform"
+          echo "Skipping"
 
         fi
 
-      displayName: "Apply Skip Destroy"
+      displayName: "Apply / Destroy"

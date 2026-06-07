@@ -1,70 +1,138 @@
 stages:
+
 - stage: GitOpsDeployment
+
   displayName: "GitOps Deployment"
+
   dependsOn: KubernetesValidation
+
+
   jobs:
+
   - job: Deploy
-    displayName: "Install Argo + Deploy"
+
+    displayName: "Install Argo And Deploy"
+
     pool:
       name: laptop-agent
+
+
     steps:
+
     - checkout: self
 
-    # CONNECT
+
+# CONNECT
+
     - script: |
+
         export AWS_DEFAULT_REGION=$(AWS_REGION)
+
         aws eks update-kubeconfig \
-          --region $(AWS_REGION) \
-          --name $(EKS_CLUSTER)
-      displayName: "Connect"
+        --region $(AWS_REGION) \
+        --name $(EKS_CLUSTER)
+
+      displayName: "Connect Cluster"
+
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-    # INSTALL
+
+# VERIFY FILE
+
     - script: |
+
+        pwd
+
+        ls
+
+        ls gitops
+
+        cat gitops/application.yaml
+
+      displayName: "Verify GitOps"
+
+
+# INSTALL ARGO
+
+    - script: |
+
         kubectl create namespace argocd \
-          --dry-run=client \
-          -o yaml \
-          | kubectl apply -f -
+        --dry-run=client \
+        -o yaml \
+        | kubectl apply -f -
 
         kubectl apply \
-          --server-side \
-          --force-conflicts \
-          -n argocd \
-          -f \
-          https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+        --server-side \
+        --force-conflicts \
+        -n argocd \
+        -f \
+        https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
       displayName: "Install Argo"
+
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-    # WAIT
+
+# WAIT
+
     - script: |
-        kubectl wait \
-          --for=condition=available \
-          deployment/argocd-server \
-          -n argocd \
-          --timeout=600s
+
+        kubectl rollout status \
+        deployment/argocd-server \
+        -n argocd \
+        --timeout=600s
+
       displayName: "Wait Argo"
+
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-    # DEPLOY
+
+# CREATE APP
+
     - script: |
+
         kubectl apply \
-          -f gitops/application.yaml
+        -f ./gitops/application.yaml
+
       displayName: "Create Application"
+
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-    # VERIFY
+
+# FORCE SYNC
+
     - script: |
+
         sleep 60
+
+        kubectl get applications \
+        -n argocd
+
+      displayName: "Verify Application"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+
+
+# VERIFY PODS
+
+    - script: |
+
+        sleep 120
+
         kubectl get pods -A
-      displayName: "Verify"
+
+      displayName: "Verify Deployment"
+
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

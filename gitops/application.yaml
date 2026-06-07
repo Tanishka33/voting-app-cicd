@@ -1,12 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
+
 kind: Application
 
 metadata:
+
   name: voting-dev
+
+  namespace: argocd
+
 
 spec:
 
   project: default
+
 
   source:
 
@@ -16,11 +22,13 @@ spec:
 
     path: k8s-specifications
 
+
   destination:
 
     server: https://kubernetes.default.svc
 
     namespace: default
+
 
   syncPolicy:
 
@@ -30,6 +38,7 @@ spec:
 
       selfHeal: true
 
+
     syncOptions:
 
-    - CreateNamespace=true
+      - CreateNamespace=true

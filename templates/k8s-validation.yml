@@ -1,0 +1,81 @@
+stages:
+
+- stage: KubernetesValidation
+
+  displayName: "Kubernetes Validation"
+
+  dependsOn: TerraformProvision
+
+  jobs:
+
+  - job: ValidateCluster
+
+    displayName: "Validate Kubernetes"
+
+    pool:
+      name: laptop-agent
+
+    steps:
+
+    - checkout: self
+
+# CONNECT
+
+    - script: |
+
+        export AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID)
+
+        export AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
+
+        export AWS_DEFAULT_REGION=$(AWS_REGION)
+
+        aws eks update-kubeconfig \
+        --region $(AWS_REGION) \
+        --name $(EKS_CLUSTER)
+
+      displayName: "Configure kubectl"
+
+# CLUSTER
+
+    - script: |
+
+        kubectl get nodes
+
+        kubectl get ns
+
+      displayName: "Validate Cluster"
+
+# MANIFEST
+
+    - script: |
+
+        kubectl apply \
+        --dry-run=client \
+        -f k8s-specifications/
+
+      displayName: "Manifest Validation"
+
+# SECURITY
+
+    - script: |
+
+        kubectl auth can-i get pods
+
+      displayName: "RBAC Validation"
+
+# SECRET CHECK
+
+    - script: |
+
+        kubectl get secrets
+
+      displayName: "Secrets Validation"
+
+# NETWORK
+
+    - script: |
+
+        kubectl get networkpolicy \
+        --all-namespaces || true
+
+      displayName: "Network Validation"

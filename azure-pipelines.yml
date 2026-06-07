@@ -26,3 +26,5 @@ stages:
 - template: templates/terraform-security.yml
 
 - template: templates/terraform-apply.yml
+
+- template: templates/k8s-validation.yml

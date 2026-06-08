@@ -6,7 +6,6 @@ stages:
 
   dependsOn: HPA
 
-
   jobs:
 
   - job: PrepareRollback
@@ -16,27 +15,24 @@ stages:
     pool:
       name: laptop-agent
 
-
-    variables:
-      AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-      AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-      AWS_DEFAULT_REGION: $(AWS_REGION)
-
-
     steps:
 
     - checkout: self
 
-
 # CONNECT
-
     - script: |
+
+        export AWS_DEFAULT_REGION=$(AWS_REGION)
 
         aws eks update-kubeconfig \
           --region $(AWS_REGION) \
           --name $(EKS_CLUSTER)
 
       displayName: "Connect"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 
 # SHOW HISTORY
@@ -58,68 +54,68 @@ stages:
 
       displayName: "Show Rollback History"
 
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 # VERIFY HEALTH
-
     - script: |
 
         FAILED=0
 
         kubectl rollout status \
-        deployment/vote \
-        --timeout=60s \
-        || FAILED=1
-
+          deployment/vote \
+          --timeout=60s \
+          || FAILED=1
 
         kubectl rollout status \
-        deployment/result \
-        --timeout=60s \
-        || FAILED=1
+          deployment/result \
+          --timeout=60s \
+          || FAILED=1
 
-
-        echo "##vso[task.setvariable variable=rollback_needed;isOutput=true]$FAILED"
-
-      name: health
+        echo "##vso[task.setvariable variable=rollback_needed]$FAILED"
 
       displayName: "Validate Deployment"
 
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 # ROLLBACK
 
     - script: |
 
         echo ""
-
         echo "ROLLBACK STARTED"
 
         kubectl rollout undo \
-        deployment/vote
+          deployment/vote
 
         kubectl rollout undo \
-        deployment/result
+          deployment/result
 
       condition: |
         eq(
-        variables['rollback_needed'],
-        '1'
+          variables['rollback_needed'],
+          '1'
         )
 
       displayName: "Rollback"
 
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-# VERIFY AFTER ROLLBACK
-
+# VERIFY RECOVERY
     - script: |
 
         kubectl rollout status \
-        deployment/vote \
-        --timeout=90s
-
+          deployment/vote \
+          --timeout=90s
 
         kubectl rollout status \
-        deployment/result \
-        --timeout=90s
-
+          deployment/result \
+          --timeout=90s
 
         kubectl get deployment
 
@@ -127,15 +123,17 @@ stages:
 
       condition: |
         eq(
-        variables['rollback_needed'],
-        '1'
+          variables['rollback_needed'],
+          '1'
         )
 
       displayName: "Verify Recovery"
 
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 # SUCCESS
-
     - script: |
 
         echo ""
@@ -143,8 +141,12 @@ stages:
 
       condition: |
         eq(
-        variables['rollback_needed'],
-        '0'
+          variables['rollback_needed'],
+          '0'
         )
 
       displayName: "Finish"
+
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)

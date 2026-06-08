@@ -6,8 +6,6 @@ resource "aws_eks_cluster" "voting" {
 
   version = "1.33"
 
-  bootstrap_self_managed_addons = false
-
 
   vpc_config {
 

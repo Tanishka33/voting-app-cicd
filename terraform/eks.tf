@@ -6,6 +6,8 @@ resource "aws_eks_cluster" "voting" {
 
   version = "1.33"
 
+  bootstrap_self_managed_addons = true
+
 
   vpc_config {
 
@@ -39,8 +41,6 @@ resource "aws_eks_cluster" "voting" {
 
       kubernetes_network_config,
 
-      bootstrap_self_managed_addons,
-
       upgrade_policy,
 
       certificate_authority,
@@ -56,5 +56,19 @@ resource "aws_eks_cluster" "voting" {
     ]
 
   }
+
+}
+
+
+output "cluster_name" {
+
+  value = aws_eks_cluster.voting.name
+
+}
+
+
+output "cluster_endpoint" {
+
+  value = aws_eks_cluster.voting.endpoint
 
 }

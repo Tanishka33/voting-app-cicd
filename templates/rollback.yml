@@ -5,6 +5,11 @@ stages:
   displayName: "Failure Recovery"
 
   dependsOn: HPA
+  condition: |
+    ne(
+      variables['TF_ACTION'],
+      'destroy'
+    )
 
   jobs:
 

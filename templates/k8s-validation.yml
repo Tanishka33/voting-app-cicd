@@ -1,16 +1,15 @@
 stages:
-
 - stage: KubernetesValidation
-
   displayName: "Kubernetes Validation"
-
   dependsOn: TerraformProvision
-
+  condition: |
+    ne(
+      variables['TF_ACTION'],
+      'destroy'
+    )
   jobs:
   - job: ValidateCluster
-
     displayName: "Validate Kubernetes"
-
     pool:
       name: laptop-agent
 

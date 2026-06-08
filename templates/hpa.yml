@@ -3,6 +3,11 @@ stages:
 - stage: HPA
   displayName: "Autoscaling"
   dependsOn: MetricsServer
+  condition: |
+    ne(
+      variables['TF_ACTION'],
+      'destroy'
+    )
 
   jobs:
 

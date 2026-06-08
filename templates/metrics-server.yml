@@ -3,7 +3,12 @@ stages:
 - stage: MetricsServer
   displayName: "Install Metrics Server"
   dependsOn: GitOpsDeployment
-
+  condition: |
+    ne(
+      variables['TF_ACTION'],
+      'destroy'
+    )
+    
   jobs:
 
   - job: InstallMetrics

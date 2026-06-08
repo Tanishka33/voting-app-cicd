@@ -41,17 +41,7 @@ resource "aws_eks_cluster" "voting" {
 
       kubernetes_network_config,
 
-      upgrade_policy,
-
-      certificate_authority,
-
-      endpoint,
-
-      identity,
-
-      platform_version,
-
-      status
+      upgrade_policy
 
     ]
 

@@ -71,40 +71,6 @@ stages:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
-
-# PASSWORD
-    - script: |
-
-        PASS=$(
-          kubectl \
-          -n argocd \
-          get secret \
-          argocd-initial-admin-secret \
-          -o jsonpath="{.data.password}" \
-          | base64 -d
-        )
-
-        echo ""
-        echo "===================="
-        echo "ARGO LOGIN"
-        echo ""
-        echo "RUN:"
-        echo "kubectl port-forward svc/argocd-server -n argocd 8085:80"
-        echo ""
-        echo "URL:"
-        echo "http://localhost:8085"
-        echo ""
-        echo "USER: admin"
-        echo "PASS: $PASS"
-        echo "===================="
-
-      displayName: "Show Argo Login"
-
-      env:
-        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-
-
 # CREATE APP
     - script: |
         kubectl apply \

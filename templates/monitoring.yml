@@ -128,18 +128,13 @@ stages:
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
 
 # SHOW LOGIN
-
     - script: |
 
-        PASS=$(
-        kubectl get secret \
-        -n monitoring \
-        grafana \
-        -o jsonpath="{.data.admin-password}" \
-        | base64 -d
-        )
-
         echo ""
+        echo "===================="
+        echo "GRAFANA LOGIN"
+        echo ""
+
         echo "RUN:"
         echo ""
 
@@ -157,8 +152,16 @@ stages:
 
         echo ""
 
-        echo "PASS:"
-        echo $PASS
+        echo "PASSWORD:"
+        echo "Retrieve locally using:"
+
+        echo ""
+
+        echo "kubectl get secret -n monitoring grafana -o jsonpath='{.data.admin-password}' | base64 -d"
+
+        echo ""
+
+        echo "===================="
 
       displayName: "Show Login"
 

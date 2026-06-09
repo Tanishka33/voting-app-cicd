@@ -134,22 +134,27 @@ stages:
 # SHOW APP URL
 
     - script: |
-        NODE=$(kubectl get nodes \
-        -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
 
         echo ""
         echo "===================="
-        echo "APPLICATION URLS"
+        echo "ARGO LOGIN"
         echo ""
-        echo "VOTE:"
-        echo "http://$NODE:31000"
+        echo "RUN:"
+        echo "kubectl port-forward svc/argocd-server -n argocd 8085:80"
         echo ""
-        echo "RESULT:"
-        echo "http://$NODE:31001"
+        echo "URL:"
+        echo "http://localhost:8085"
+        echo ""
+        echo "USER: admin"
+        echo ""
+        echo "PASSWORD:"
+        echo "Retrieve locally using:"
+        echo ""
+        echo "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
         echo ""
         echo "===================="
 
-      displayName: "Show Application URLs"
+      displayName: "Show Argo Login"
 
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
